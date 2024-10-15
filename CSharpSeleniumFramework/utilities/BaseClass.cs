@@ -47,12 +47,34 @@ namespace CSharpSeleniumFramework.utilities
             else if (browserName == "Edge") driver = new EdgeDriver();
             else throw new ArgumentException("Invalid browser name in App.config");
         }
-        // Credentials initialization
+        // Initialize config values from both App.config and credentials.config
         private void InitConfigValues()
         {
-            Username = ConfigurationManager.AppSettings["Username"];
-            Password = ConfigurationManager.AppSettings["Password"];
+            // Load credentials from credentials.config
+            var credentials = LoadCredentials();
+
+            // Use credentials from the separate config file
+            Username = credentials["Username"];
+            Password = credentials["Password"];
+
+            // Load base URL from App.config
             BaseUrl = ConfigurationManager.AppSettings["baseUrl"];
+        }
+        // Method to load credentials from credentials.config
+        private Dictionary<string, string> LoadCredentials()
+        {
+            string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "credentials.config");
+            var config = XDocument.Load(filePath);
+
+            var credentials = new Dictionary<string, string>();
+            foreach (var element in config.Descendants("add"))
+            {
+                string key = element.Attribute("key").Value;
+                string value = element.Attribute("value").Value;
+                credentials[key] = value;
+            }
+
+            return credentials;
         }
 
         public IWebElement WaitForElement(IWebElement element, Func<IWebElement, bool> condition, int timeoutInSeconds = 30)
